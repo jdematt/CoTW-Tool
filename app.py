@@ -8,6 +8,24 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# --- NEW: CSS INJECTION FOR AUTOSCALING ---
+st.markdown("""
+    <style>
+    /* Target the big metric numbers to wrap and scale */
+    div[data-testid="stMetricValue"] > div {
+        white-space: normal !important;
+        word-wrap: break-word;
+        font-size: clamp(1.2rem, 2vw, 2.5rem) !important; 
+    }
+    
+    /* Target the Need Zone and Biome text to scale */
+    .scalable-text {
+        font-size: clamp(1rem, 1.2vw, 1.5rem) !important;
+        line-height: 1.6;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
 # 2. Helper function for icons (Defined globally so everything can use it)
 def get_animal_icon(species_name):
     name = str(species_name).lower()
@@ -47,8 +65,7 @@ try:
     if 'active_reserve' not in st.session_state:
         st.session_state.active_reserve = preserves[0]
 
-    # --- NEW: The Callback Function ---
-    # This runs the exact millisecond a button is clicked, BEFORE the screen redraws
+    # The Callback Function
     def update_reserve(new_reserve):
         st.session_state.active_reserve = new_reserve
 
@@ -58,10 +75,10 @@ try:
         
         st.sidebar.button(
             label=button_label, 
-            key=f"btn_{preserve}", # Assigns a unique ID to prevent rendering ghosting
+            key=f"btn_{preserve}", 
             use_container_width=True,
-            on_click=update_reserve, # Triggers the callback function
-            args=(preserve,) # Passes the reserve name into the function
+            on_click=update_reserve, 
+            args=(preserve,) 
         )
 
     selected_preserve = st.session_state.active_reserve
@@ -101,7 +118,6 @@ try:
             filtered_df = filtered_df.sort_values(by="Species", ascending=is_ascending)
             
         elif sort_by == "Class (Numeric)":
-            # Multi-level sort: Sorts by Class, then ensures species are alphabetical
             filtered_df = filtered_df.sort_values(by=["Class", "Species"], ascending=[is_ascending, True])
             
         elif sort_by == "Diamond Score":
@@ -121,16 +137,26 @@ try:
             
             with st.expander(f"{icon} {row['Species']} (Class {row['Class']})"):
                 
-                # Top Row: Big numbers and key stats
-                col1, col2, col3, col4 = st.columns(4)
-                col1.metric("Class", str(row['Class']))
-                col2.metric("Difficulty", str(row['Max Difficulty Level']))
-                col3.metric("Diamond Score", str(row['Diamond Score']))
-                col4.metric("Max Weight", str(row['Max Weight']))
+                # Top Row: Custom columns with CSS-wrapped metrics
+                col1, col2, col3, col4 = st.columns([1, 3, 2, 2])
+                
+                # Helper to create a custom "metric" box that respects our CSS
+                def custom_metric(label, value):
+                    st.markdown(f"""
+                        <div style='margin-bottom: 10px;'>
+                            <div style='font-size: 0.8rem; color: #808495;'>{label}</div>
+                            <div class='scalable-text' style='font-weight: bold;'>{value}</div>
+                        </div>
+                    """, unsafe_allow_html=True)
+
+                with col1: custom_metric("Class", str(row['Class']))
+                with col2: custom_metric("Difficulty", str(row['Max Difficulty Level']))
+                with col3: custom_metric("Diamond Score", str(row['Diamond Score']))
+                with col4: custom_metric("Max Weight", str(row['Max Weight']))
                 
                 st.markdown("---") 
                 
-                # Middle Row: Need Zones and Biome (Split into two distinct columns)
+                # Middle Row: Need Zones and Biome
                 nz_col, biome_col = st.columns([2, 1])
                 
                 with nz_col:
@@ -143,15 +169,17 @@ try:
                                             .replace("R:", "💤 <b>Rest:</b>") \
                                             .replace(", ", "<br>") 
                     
-                    st.markdown(f"<div style='font-size: 1.2rem; line-height: 1.6;'>{clean_zones}</div>", unsafe_allow_html=True)
+                    # Uses the new scalable-text CSS class
+                    st.markdown(f"<div class='scalable-text'>{clean_zones}</div>", unsafe_allow_html=True)
                     
                 with biome_col:
                     st.markdown("#### 🌲 Primary Biome")
-                    st.markdown(f"<div style='font-size: 1.2rem;'><b>{row['Primary Biome']}</b></div>", unsafe_allow_html=True)
+                    # Uses the new scalable-text CSS class
+                    st.markdown(f"<div class='scalable-text'><b>{row['Primary Biome']}</b></div>", unsafe_allow_html=True)
                 
                 st.markdown("---")
                 
-                # Bottom Row: Equipment Breakdown using colored callout boxes
+                # Bottom Row: Equipment Breakdown
                 st.markdown("#### 🎒 Recommended Equipment")
                 eq_col1, eq_col2, eq_col3 = st.columns(3)
                 
