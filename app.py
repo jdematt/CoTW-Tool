@@ -38,7 +38,7 @@ try:
     # Clean up the data slightly (fill blank cells with a dash)
     df = df.fillna("-")
 
-   # 4. Sidebar Navigation
+    # 4. Sidebar Navigation
     st.sidebar.title("🌲 Reserves")
     st.sidebar.write("Select a map below:")
     
@@ -121,24 +121,63 @@ try:
             
             with st.expander(f"{icon} {row['Species']} (Class {row['Class']})"):
                 
+                # Top Row: Big numbers and key stats
                 col1, col2, col3, col4 = st.columns(4)
                 col1.metric("Class", str(row['Class']))
                 col2.metric("Difficulty", str(row['Max Difficulty Level']))
                 col3.metric("Diamond Score", str(row['Diamond Score']))
                 col4.metric("Max Weight", str(row['Max Weight']))
                 
-                st.markdown("<br>", unsafe_allow_html=True)
+                st.markdown("---") # Adds a clean horizontal divider
                 
-                st.write(f"**Need Zones:** {row['Need Zone Times']}  |  **Primary Biome:** {row['Primary Biome']}")
+                # Middle Row: Need Zones and Biome (Split into two distinct columns)
+                # Middle Row: Need Zones and Biome (Split into two distinct columns)
+                nz_col, biome_col = st.columns([2, 1])
+                
+                with nz_col:
+                    st.markdown("#### 🕒 Need Zones")
+                    zones_text = str(row['Need Zone Times'])
+                    
+                    # Swap abbreviations for icons, and replace commas with HTML line breaks
+                    clean_zones = zones_text.replace("D:", "💧 <b>Drink:</b>") \
+                                            .replace("F:", "🌿 <b>Feed:</b>") \
+                                            .replace("R:", "💤 <b>Rest:</b>") \
+                                            .replace(", ", "<br>") 
+                    
+                    # Use HTML to force a larger font size and better line spacing
+                    st.markdown(f"<div style='font-size: 1.2rem; line-height: 1.6;'>{clean_zones}</div>", unsafe_allow_html=True)
+                    
+                with biome_col:
+                    st.markdown("#### 🌲 Primary Biome")
+                    # Apply the same larger font to the biome text
+                    st.markdown(f"<div style='font-size: 1.2rem;'><b>{row['Primary Biome']}</b></div>", unsafe_allow_html=True)
+                
+                with nz_col:
+                    st.markdown("#### 🕒 Need Zones")
+                    # Clean up the text by swapping abbreviations for bold icons
+                    zones_text = str(row['Need Zone Times'])
+                    zones_text = zones_text.replace("D:", "💧 **Drink:**").replace("F:", "🌿 **Feed:**").replace("R:", "💤 **Rest:**")
+                    st.write(zones_text)
+                    
+                with biome_col:
+                    st.markdown("#### 🌲 Primary Biome")
+                    st.write(f"**{row['Primary Biome']}**")
                 
                 st.markdown("---")
+                
+                # Bottom Row: Equipment Breakdown using colored callout boxes
+                st.markdown("#### 🎒 Recommended Equipment")
                 eq_col1, eq_col2, eq_col3 = st.columns(3)
+                
                 with eq_col1:
-                    st.write(f"**Callers:**<br>{row['Mouth / Electronic Caller']}", unsafe_allow_html=True)
+                    # st.info creates a blue box
+                    st.info(f"🔊 **Callers:**\n\n{row['Mouth / Electronic Caller']}")
                 with eq_col2:
-                    st.write(f"**Stationary Lures:**<br>{row['Stationary Lure (Feeder)']}", unsafe_allow_html=True)
+                    # st.warning creates a yellow/orange box
+                    st.warning(f"🏗️ **Stationary:**\n\n{row['Stationary Lure (Feeder)']}")
                 with eq_col3:
-                    st.write(f"**Scents & Decoys:**<br>{row['Scent / Decoy']}", unsafe_allow_html=True)
+                    # st.success creates a green box
+                    st.success(f"💨 **Scents & Decoys:**\n\n{row['Scent / Decoy']}")
 
 except Exception as e:
     st.error("Could not load the application data.")
